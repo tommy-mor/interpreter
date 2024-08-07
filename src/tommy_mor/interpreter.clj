@@ -5,6 +5,16 @@
 
 (hyperfiddle.rcf/enable!)
 
+(defn split-vec [v on]
+  (let [[a b] (split-with #(not= on %) v)]
+    [(vec a) (vec (rest b))]))
+
+(tests
+ (split-vec [1 2 3 'split 5 6] 'split)
+ (split-vec [1 2 3 'split] 'split) := [[1 2 3] []]
+ (split-vec ['split 4 5] 'split) := [[] [4 5]]
+ (split-vec [4 5] 'split) := [[4 5] []])
+
 (defn trim-plus [sym]
   (let [idx (dec (count (name sym)))]
     (symbol (subs (name sym) 0 idx))))
@@ -32,7 +42,7 @@
         `(do (swap! ~tape conj ~expr)
              ~(compile-expr tape program))
 
-        (= (first expr) 'invoke>)
+        (and (seq? expr) (= (first expr) 'invoke>))
         (let [[_ f arity] expr]
           (assert (number? arity) "arity must be a number")
           `(if (> ~arity (count (deref ~tape)))
@@ -41,6 +51,17 @@
                (reset! ~tape (vec (drop-last ~arity (deref ~tape))))
                (swap! ~tape conj res#)
                ~(compile-expr tape program))))
+        
+        (= expr '<pop>)
+        `(do (swap! ~tape pop)
+             ~(compile-expr tape program))
+        
+        (and (seq? expr) (= (first expr) 'if>))
+        (let [[ifs elss] (split-vec (rest expr) 'else>)]
+          `(let [top# (last (deref ~tape))]
+             (swap! ~tape pop)
+             (if top# ~(compile-expr tape ifs) ~(compile-expr tape elss))
+             ~(compile-expr tape program)))
        
 
         
@@ -93,14 +114,47 @@
  
  (do (defstackfn f [] 3 4 (invoke> + 2)) (f)) := 7
  (do (defstackfn f [] 3 4 5 (invoke> + 2) (invoke> * 2)) (f)) := (* 3 9)
+
+ "pop"
+ (do (defstackfn f [] 3 4 5 <pop> (invoke> + 2)) (f)) := 7
+ (do (defstackfn f [] 3 4 5 <pop>) (f)) := 4
+ (do (defstackfn f [] 3 4 5 <pop> <pop>) (f)) := 3
  
- )
+ (do (defstackfn f [] <pop>) (f)) :throws java.lang.IllegalStateException
 
-(f)
+ "if"
+ (do (defstackfn f [] true (if> 3 4)) (f)) := 4
+ (do (defstackfn f [] true (if> 3 else> 4)) (f)) := 3
+ (do (defstackfn f [] false (if> 3 else> 4)) (f)) := 4
+ (do (defstackfn f [] true (if> 3 4 (invoke> * 2) else> 4)) (f)) := 12
+ (do (defstackfn f [] 3 true (if> else> 4)) (f)) := 3
+ (do (defstackfn f [] 3 false (if> else> 4) (invoke> * 2)) (f)) := 12
+
+ (do (defstackfn f [!a !b !c]
+       !a
+       !b
+       (invoke> + 2)
+       !v1+
+       !c
+       !c
+       <pop>
+       2
+       (invoke> * 2)
+       !v2+
+       (invoke> = 2)
+       (if>
+           !v1
+         !v2
+         (invoke> - 2)
+         else>
+         "false!!"
+         (invoke> println 1)
+         <pop>
+         !v1
+         !v2
+         (invoke> * 2)))
+     (f 1 2 4)) := 24)
 
 
-(defstackfn f [!a] !a 2 3 4)
-
-(f 2)
 
 
