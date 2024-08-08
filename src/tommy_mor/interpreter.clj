@@ -39,7 +39,7 @@
         `(do (swap! ~tape conj ~expr)
              ~(compile-expr tape program))
         
-        (or (string? expr) (number? expr) (boolean? expr))
+        (or (string? expr) (number? expr) (boolean? expr) (vector? expr))
         `(do (swap! ~tape conj ~expr)
              ~(compile-expr tape program))
 
@@ -64,15 +64,19 @@
              (if top# ~(compile-expr tape ifs) ~(compile-expr tape elss))
              ~(compile-expr tape program)))
         
-        (and (list? expr) (ifn? (first expr)))
+        
+        (and (list? expr) (symbol? (first expr)) (or (ifn? (first expr))
+                                                     (str/starts-with? (name (first expr)) ".")))
         (let [blanks (find-blanks (rest expr))
               stack-arity (count blanks)
               f (first expr)
-              args (vec (rest expr))]
-          `(let [stackvals# (take-last ~stack-arity (deref ~tape))
-                 newargs# (~replace-args (quote ~args) ~blanks stackvals#)]
+              args (vec (rest expr))
+              newargs (replace-args args blanks (for [x (range stack-arity)]
+                                                  `(nth (deref ~tape) (- (count (deref ~tape)) ~x 1) )))]
+          
+          `(let [res# (~f ~@newargs)]
              (reset! ~tape (vec (drop-last ~stack-arity (deref ~tape))))
-             (swap! ~tape conj (apply ~f newargs#))
+             (swap! ~tape conj res#)
              ~(compile-expr tape program)))
         
         true

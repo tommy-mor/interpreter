@@ -27,12 +27,40 @@
  )
 
 (tests
- "virtual method invokes"
+ "anonymous stack functions"
+ (fn? (do (defstackfn f [] 3 (fn [x] x)) (f))) := true
+ (fn? (do (defstackfn f [] 3 (fn [x] x) (_ 3)) (f))) := true
+ (fn? (do (defstackfn f [] 3 (fn [x] x)) (f))) := true
+ (fn? (do (defstackfn f [] 3 (fn [x] x)) (f))) := true
+ )
+
+(tests
+ "cleaner invoke syntax"
  (defn test [x] x)
  (do (defstackfn f [] 3 (get {3 4} _)) (f)) := 4
  (do (defstackfn f [] 3 (test _)) (f)) := 3
  (do (defstackfn f [] 3 (test 4)) (f)) := 4
- (do (defstackfn f [] "Hello" ". Hi computer" (str _ " world" _)) (f)) := "Hello world. Hi computer"
+ (do (defstackfn f [] "second arg" "first arg" (str _ ", " _)) (f)) := "first arg, second arg"
+ 
+ "virtual method calls"
+ (do (defstackfn f [] [1 2 3] (.get _ 2)) (f)) := 3
+ (do (defstackfn f [] [1 2 3] !a+ !a (.get _ 2)) (f)) := 3
+ (do (defstackfn f [] (.get [1 2 3] 2)) (f))
+ (do (defstackfn f [] (.get [1 2 3] _)) (f)) :throws java.lang.IndexOutOfBoundsException
+ (do (defstackfn f [] [1 2 3] (.get _ 2)) (f)) := 3
+
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
  
  
  
