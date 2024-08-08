@@ -3,7 +3,11 @@
             [hyperfiddle.rcf :refer [tests]]
             [hyperfiddle.rcf]))
 
+
 (hyperfiddle.rcf/enable!)
+
+(tests
+ (trim-plus 'arst+) := 'arst)
 
 
 (tests
@@ -11,6 +15,31 @@
  (split-vec [1 2 3 'split] 'split) := [[1 2 3] []]
  (split-vec ['split 4 5] 'split) := [[] [4 5]]
  (split-vec [4 5] 'split) := [[4 5] []])
+
+(tests
+ (find-blanks '(func _ 3 _ 4)) := [1 3]
+ (find-blanks '(func 4)) := [])
+
+(tests
+ (replace-args [1 2 3] [] []) := [1 2 3]
+ (replace-args [1 2 3] [1] ["2"]) := [1 "2" 3]
+ (replace-args [3 2 1] [1 2] ["2" "3"]) := [3 "2" "3"]
+ )
+
+(tests
+ "virtual method invokes"
+ (defn test [x] x)
+ (do (defstackfn f [] 3 (get {3 4} _)) (f)) := 4
+ (do (defstackfn f [] 3 (test _)) (f)) := 3
+ (do (defstackfn f [] 3 (test 4)) (f)) := 4
+ (do (defstackfn f [] "Hello" ". Hi computer" (str _ " world" _)) (f)) := "Hello world. Hi computer"
+ 
+ 
+ 
+ 
+ 
+ 
+ )
 
 (tests
  "constants"

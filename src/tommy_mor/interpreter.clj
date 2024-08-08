@@ -11,8 +11,18 @@
   (let [idx (dec (count (name sym)))]
     (symbol (subs (name sym) 0 idx))))
 
-(tests
- (trim-plus 'arst+) := 'arst)
+(defn find-blanks [sym] (vec (keep-indexed #(when (= %2 '_) %1) sym)))
+
+(defn replace-args [args newidx newvals]
+  (assert (= (count newidx) (count newvals)))
+  (loop [args args
+         newidx newidx
+         newvals newvals]
+    (if (empty? newidx)
+      args
+      (recur (assoc args (first newidx) (first newvals) )
+             (rest newidx)
+             (rest newvals)))))
 
 (defn compile-expr [tape [expr & program]]
   (cond (nil? expr)
@@ -26,7 +36,6 @@
         
         (and (symbol? expr)
              (str/starts-with? (name expr) "!"))
-        
         `(do (swap! ~tape conj ~expr)
              ~(compile-expr tape program))
         
@@ -54,8 +63,17 @@
              (swap! ~tape pop)
              (if top# ~(compile-expr tape ifs) ~(compile-expr tape elss))
              ~(compile-expr tape program)))
-       
-
+        
+        (and (list? expr) (ifn? (first expr)))
+        (let [blanks (find-blanks (rest expr))
+              stack-arity (count blanks)
+              f (first expr)
+              args (vec (rest expr))]
+          `(let [stackvals# (take-last ~stack-arity (deref ~tape))
+                 newargs# (~replace-args (quote ~args) ~blanks stackvals#)]
+             (reset! ~tape (vec (drop-last ~stack-arity (deref ~tape))))
+             (swap! ~tape conj (apply ~f newargs#))
+             ~(compile-expr tape program)))
         
         true
         (throw (ex-info "unknown form" {:form expr}))))
