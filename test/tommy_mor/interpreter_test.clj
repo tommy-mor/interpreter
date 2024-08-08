@@ -29,14 +29,14 @@
 (tests
  "anonymous stack functions"
  (fn? (do (defstackfn f [] 3 (fn [x] x)) (f))) := true
- (fn? (do (defstackfn f [] 3 (fn [x] x) (_ 3)) (f))) := true
- (fn? (do (defstackfn f [] 3 (fn [x] x)) (f))) := true
- (fn? (do (defstackfn f [] 3 (fn [x] x)) (f))) := true
+ (do (defstackfn f [] 3 (fn [x] x) (_ 3)) (f)) := 3
+ 
  )
+
+(defn test [x] x)
 
 (tests
  "cleaner invoke syntax"
- (defn test [x] x)
  (do (defstackfn f [] 3 (get {3 4} _)) (f)) := 4
  (do (defstackfn f [] 3 (test _)) (f)) := 3
  (do (defstackfn f [] 3 (test 4)) (f)) := 4

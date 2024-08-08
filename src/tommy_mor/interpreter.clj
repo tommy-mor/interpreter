@@ -65,16 +65,14 @@
              ~(compile-expr tape program)))
         
         
-        (and (list? expr) (symbol? (first expr)) (or (ifn? (first expr))
-                                                     (str/starts-with? (name (first expr)) ".")))
-        (let [blanks (find-blanks (rest expr))
+        (and (list? expr))
+        (let [blanks (find-blanks expr)
               stack-arity (count blanks)
-              f (first expr)
-              args (vec (rest expr))
+              args (vec expr)
               newargs (replace-args args blanks (for [x (range stack-arity)]
                                                   `(nth (deref ~tape) (- (count (deref ~tape)) ~x 1) )))]
           
-          `(let [res# (~f ~@newargs)]
+          `(let [res# (~@newargs)]
              (reset! ~tape (vec (drop-last ~stack-arity (deref ~tape))))
              (swap! ~tape conj res#)
              ~(compile-expr tape program)))
