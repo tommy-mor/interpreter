@@ -52,6 +52,10 @@
              (if top# ~(compile-expr tape ifs) ~(compile-expr tape elss))
              ~(compile-expr tape program)))
         
+        (and (seq? expr) (= (first expr) 'fn))
+        (let [[_ args & body] expr]
+          `(fn ~args ~(compile-expr tape body)))
+        
         
         true
         (throw (ex-info "unknown form" {:form expr}))))

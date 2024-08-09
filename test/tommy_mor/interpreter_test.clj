@@ -22,9 +22,15 @@
  "virtual method calls"
  (do (defstackfn f [] "arst" (invoke> count 1)) (f)) := 4
  (do (defstackfn f [] "arst" (invoke> .toUpperCase 1)) (f)) := "ARST"
- (do (defstackfn f [] 2 [1 2 3] (invoke> .get 2)) (f)) := 3
- 
- 
+ (do (defstackfn f [] (invoke> .get 2)) (f)) :throws clojure.lang.ExceptionInfo
+ (do (defstackfn f [] 2 [1 2 3] (invoke> .get 2)) (f)) := 3)
+
+(tests
+ "anonymous stack functions"
+ (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
+ (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
+ (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
+ (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
  )
 
 (tests
