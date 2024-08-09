@@ -18,6 +18,8 @@
 
 (tests
  "loops"
+ ;; loops need a condition value on the stack to pop
+ (do (defstackfn f [] (loop)) (f)) :throws java.lang.AssertionError
  (do (defstackfn f []
        ;; for (int i = 4; i != 0; i--)
        4 ;; load 
@@ -105,6 +107,7 @@
 
  ;; invoke!> grabs the function off of the stack, as well as the arguments
  (do (defstackfn f [] 5 (fn [!a] !a !a (invoke> + 2)) (invoke!> 2)) (f)) := 10
+ (do (defstackfn f [] 5 (fn [!a] !a !a (invoke> + 2)) (invoke!> 3)) (f)) :throws clojure.lang.ExceptionInfo
  
  ;; 1st argument = first item on stack, 2nd arg = 2nd item on stack (feels like its reversed)
  (do (defstackfn f [] "world" "hello " (invoke> str 2)) (f)) := "hello world"
@@ -216,6 +219,7 @@
  (do (defstackfn f [!a !b] !b) (f 2 4)) := 4
 
  "assigning"
+ (do (defstackfn f [] !b+) (f)) :throws java.lang.AssertionError
  (do (defstackfn f [] 3 !b+ 4 !b) (f)) := 3
  
  (do (defstackfn f [] 3 !a+ 5 !b+ !a) (f)) := 3
