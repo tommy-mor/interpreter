@@ -41,6 +41,17 @@
                (swap! ~tape conj res#)
                ~(compile-expr tape program))))
         
+        (and (seq? expr) (= (first expr) 'invoke!>))
+        (let [[_ arity] expr
+              args (for [x (range arity)]
+                     `(nth (deref ~tape) (- (count (deref ~tape)) ~x 1) ))]
+          `(if (> ~arity (count (deref ~tape)))
+             (throw (ex-info "not enough values on stack" {:stack ~tape :arity ~arity}))
+             (let [res# (~@args)]
+               (reset! ~tape (vec (drop-last ~arity (deref ~tape))))
+               (swap! ~tape conj res#)
+               ~(compile-expr tape program))))
+        
         (= expr '<pop>)
         `(do (swap! ~tape pop)
              ~(compile-expr tape program))
@@ -54,7 +65,8 @@
         
         (and (seq? expr) (= (first expr) 'fn))
         (let [[_ args & body] expr]
-          `(fn ~args ~(compile-expr tape body)))
+          `(do (swap! ~tape conj (fn ~args ~(compile-expr tape body)))
+               ~(compile-expr tape program)))
         
         
         true

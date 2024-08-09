@@ -28,9 +28,32 @@
 (tests
  "anonymous stack functions"
  (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
- (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
- (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
- (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
+ (do (defstackfn f [] 5 (fn [!a] !a !a (invoke> + 2)) (invoke!> 2)) (f)) := 10
+
+ "with lexical closures"
+ (do (defstackfn f [] 10 !b+ 5 !c+ !b (fn [!a] !a !c (invoke> + 2)) (invoke!> 2)) (f)) := (+ 5 10)
+ 
+ "nested functions, carrying values with closures"
+ (do (defstackfn f []
+       10 !b+
+       5 !c+
+       (fn [!a]
+         !a
+         (fn [!b] !a !b (invoke> * 2)))
+       !f+
+
+       !b !f (invoke!> 2) !f2+
+       !c !f2 (invoke!> 2)) (f))
+ 
+ "multi arity functions"
+ (do (defstackfn f []
+       10 !b+
+       5 !c+
+       (fn [!a !b] !a !b (invoke> + 2)) !f+
+
+       !b !c !f (invoke!> 3)) (f)) := 15
+ 
+ 
  )
 
 (tests
