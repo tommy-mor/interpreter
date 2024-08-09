@@ -16,7 +16,24 @@
  (split-vec ['split 4 5] 'split) := [[] [4 5]]
  (split-vec [4 5] 'split) := [[4 5] []])
 
-(defn test [x] x)
+(tests
+ "loops"
+ (do (defstackfn f []
+       4 !i+
+       
+       true
+       (loop
+         !i+
+         !i (invoke> println 1)
+         
+         !i
+         (invoke> dec 1)
+         !i+
+
+         !i
+         0
+         (invoke> not= 2))) (f)) := 4
+ )
 
 (tests
  "virtual method calls"

@@ -19,6 +19,7 @@
              (str/starts-with? (name expr) "!")
              (str/ends-with? (name expr) "+"))
         `(let [~(trim-plus expr) (last (deref ~tape))]
+           (assert (>= (count (deref ~tape)) 1) "cant read value from empty stack")
            ~(compile-expr tape program))
         
         (and (symbol? expr)
@@ -68,12 +69,26 @@
           `(do (swap! ~tape conj (fn ~args ~(compile-expr tape body)))
                ~(compile-expr tape program)))
         
+        (and (seq? expr) (= (first expr) 'loop))
+        (let [[_ & body] expr]
+          ;; ive decided that loops don't have values, they are only for side effects
+          `(do (loop []
+                
+                 (assert (>= (count (deref ~tape)) 1) "loop must have test value to pop")
+                 (let [v# (last (deref ~tape))]
+                   (swap! ~tape pop)
+                   (when v#
+                     ~(compile-expr tape body)
+                     (recur))))
+               ~(compile-expr tape program)))
+        
         
         true
         (throw (ex-info "unknown form" {:form expr}))))
 
+
 (defn compile [program]
-  (let [tape (gensym 'tape)]
+(let [tape (gensym 'tape)]
     `(let [~tape (atom [])]
        ~(compile-expr tape program))))
 
