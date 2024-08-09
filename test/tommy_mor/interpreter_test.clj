@@ -52,9 +52,13 @@
        (fn [!a !b] !a !b (invoke> + 2)) !f+
 
        !b !c !f (invoke!> 3)) (f)) := 15
- 
- 
- )
+
+ "varargs"
+ (do (defstackfn f []
+       5 !b+
+       (fn [& !rest] !rest (invoke> count 1)) !f+
+
+       !b !b !b !b !b !f (invoke!> 5)) (f)) := 4)
 
 (tests
  "constants"
