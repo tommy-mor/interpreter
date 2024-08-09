@@ -16,62 +16,20 @@
  (split-vec ['split 4 5] 'split) := [[] [4 5]]
  (split-vec [4 5] 'split) := [[4 5] []])
 
-(tests
- (find-blanks '(func _ 3 _ 4)) := [1 3]
- (find-blanks '(func 4)) := [])
-
-(tests
- (replace-args [1 2 3] [] []) := [1 2 3]
- (replace-args [1 2 3] [1] ["2"]) := [1 "2" 3]
- (replace-args [3 2 1] [1 2] ["2" "3"]) := [3 "2" "3"]
- )
-
-(tests
- "anonymous stack functions"
- (fn? (do (defstackfn f [] 3 (fn [x] x)) (f))) := true
- (do (defstackfn f [] 3 (fn [x] x) (_ 3)) (f)) := 3
- 
- )
-
 (defn test [x] x)
 
 (tests
- "cleaner invoke syntax"
- (do (defstackfn f [] 3 (get {3 4} _)) (f)) := 4
- (do (defstackfn f [] 3 (test _)) (f)) := 3
- (do (defstackfn f [] 3 (test 4)) (f)) := 4
- (do (defstackfn f [] "second arg" "first arg" (str _ ", " _)) (f)) := "first arg, second arg"
- 
  "virtual method calls"
- (do (defstackfn f [] [1 2 3] (.get _ 2)) (f)) := 3
- (do (defstackfn f [] [1 2 3] !a+ !a (.get _ 2)) (f)) := 3
- (do (defstackfn f [] (.get [1 2 3] 2)) (f))
- (do (defstackfn f [] (.get [1 2 3] _)) (f)) :throws java.lang.IndexOutOfBoundsException
- (do (defstackfn f [] [1 2 3] (.get _ 2)) (f)) := 3
-
-
- 
- 
- 
- 
- 
-
- 
-
- 
-
- 
- 
- 
- 
- 
+ (do (defstackfn f [] "arst" (invoke> count 1)) (f)) := 4
+ (do (defstackfn f [] "arst" (invoke> .toUpperCase 1)) (f)) := "ARST"
+ (do (defstackfn f [] 2 [1 2 3] (invoke> .get 2)) (f)) := 3
  
  
  )
 
 (tests
  "constants"
- (do (defstackfn f [] 3) (f)) := 3
+ 
  
  (do (defstackfn f [] "ars") (f))
  (do (defstackfn f [] true) (f)) := true
@@ -99,9 +57,9 @@
  (do (defstackfn f [] 3 4 (invoke> = 2)) (f)) := false
  (do (defstackfn f [] 3 3 (invoke> = 2)) (f)) := true
 
- (do (defstackfn f [] 3 "arst" (invoke> str 2)) (f)) := "3arst"
+ (do (defstackfn f [] 3 "arst" (invoke> str 2)) (f)) := "arst3"
  
- (do (defstackfn f [] 3 4 5 (invoke> str 3)) (f)) := "345"
+ (do (defstackfn f [] 3 4 5 (invoke> str 3)) (f)) := "543"
  (do (defstackfn f [] 3 4 (invoke> str 3)) (f)) :throws clojure.lang.ExceptionInfo
  
  (do (defstackfn f [] 3 4 (invoke> + 2)) (f)) := 7

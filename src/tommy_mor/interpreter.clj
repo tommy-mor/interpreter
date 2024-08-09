@@ -11,19 +11,6 @@
   (let [idx (dec (count (name sym)))]
     (symbol (subs (name sym) 0 idx))))
 
-(defn find-blanks [sym] (vec (keep-indexed #(when (= %2 '_) %1) sym)))
-
-(defn replace-args [args newidx newvals]
-  (assert (= (count newidx) (count newvals)))
-  (loop [args args
-         newidx newidx
-         newvals newvals]
-    (if (empty? newidx)
-      args
-      (recur (assoc args (first newidx) (first newvals) )
-             (rest newidx)
-             (rest newvals)))))
-
 (defn compile-expr [tape [expr & program]]
   (cond (nil? expr)
         `(last (deref ~tape))
@@ -44,11 +31,12 @@
              ~(compile-expr tape program))
 
         (and (seq? expr) (= (first expr) 'invoke>))
-        (let [[_ f arity] expr]
-          (assert (number? arity) "arity must be a number")
+        (let [[_ f arity] expr
+              args (for [x (range arity)]
+                     `(nth (deref ~tape) (- (count (deref ~tape)) ~x 1) ))]
           `(if (> ~arity (count (deref ~tape)))
              (throw (ex-info "not enough values on stack" {:stack ~tape :arity ~arity}))
-             (let [res# (apply ~f (take-last ~arity (deref ~tape)))]
+             (let [res# (~f ~@args)]
                (reset! ~tape (vec (drop-last ~arity (deref ~tape))))
                (swap! ~tape conj res#)
                ~(compile-expr tape program))))
@@ -64,18 +52,6 @@
              (if top# ~(compile-expr tape ifs) ~(compile-expr tape elss))
              ~(compile-expr tape program)))
         
-        
-        (and (list? expr))
-        (let [blanks (find-blanks expr)
-              stack-arity (count blanks)
-              args (vec expr)
-              newargs (replace-args args blanks (for [x (range stack-arity)]
-                                                  `(nth (deref ~tape) (- (count (deref ~tape)) ~x 1) )))]
-          
-          `(let [res# (~@newargs)]
-             (reset! ~tape (vec (drop-last ~stack-arity (deref ~tape))))
-             (swap! ~tape conj res#)
-             ~(compile-expr tape program)))
         
         true
         (throw (ex-info "unknown form" {:form expr}))))
