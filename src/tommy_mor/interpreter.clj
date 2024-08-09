@@ -19,14 +19,14 @@
         `(last (deref ~tape))
         
         (and (symbol? expr)
-             (str/starts-with? (name expr) "!")
-             (str/ends-with? (name expr) "+"))
+             (str/starts-with? (str expr) "!")
+             (str/ends-with? (str expr) "+"))
         `(let [~(trim-plus expr) (last (deref ~tape))]
            (assert (>= (count (deref ~tape)) 1) "cant read value from empty stack")
            ~(compile-expr tape program))
         
         (and (symbol? expr)
-             (str/starts-with? (name expr) "!"))
+             (str/starts-with? (str expr) "!"))
         `(do (swap! ~tape conj ~expr)
              ~(compile-expr tape program))
         
