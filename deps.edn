@@ -1,6 +1,7 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.11.3"}
-        com.hyperfiddle/rcf {:mvn/version "20220926-202227"}}
+        com.hyperfiddle/rcf {:mvn/version "20220926-202227"}
+        com.rpl/specter {:mvn/version "1.1.4"}}
  
  :aliases
  {:build {:deps {io.github.clojure/tools.build

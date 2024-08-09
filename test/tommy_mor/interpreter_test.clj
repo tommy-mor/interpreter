@@ -98,8 +98,11 @@
  (do (defstackfn f [] (invoke> .get 2)) (f)) :throws clojure.lang.ExceptionInfo
  (do (defstackfn f [] 2 [1 2 3] (invoke> .get 2)) (f)) := 3)
 
+"TODO add missing tests"
+
 (tests
  "anonymous stack functions"
+ ;; produces a function callable from clojure
  (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
 
  ;; invoke!> grabs the function off of the stack, as well as the arguments
@@ -167,6 +170,19 @@
        !f+
 
        [1 2 3] !f (invoke> map 2)) (f)) := [4 3 4]
+ 
+ (do (defstackfn f []
+       
+       (fn [!x]
+         2 !x (invoke> = 2)
+         (if> 3 else> 0 true (loop !i+
+
+                               !i (invoke> inc 1) !i+
+
+                               !i 10 (invoke> > 2))))
+       !f+
+
+       [1 2 3] !f (invoke> map 2)) (f)) := [10 3 10]
  )
 
 (tests

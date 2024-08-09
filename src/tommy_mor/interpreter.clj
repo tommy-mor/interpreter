@@ -1,15 +1,18 @@
 (ns tommy-mor.interpreter
   (:require [clojure.string :as str]
-            [hyperfiddle.rcf :refer [tests]])
+            [hyperfiddle.rcf :refer [tests]]
+            [com.rpl.specter :refer :all])
   (:gen-class))
 
 (defn split-vec [v on]
   (let [[a b] (split-with #(not= on %) v)]
     [(vec a) (vec (rest b))]))
 
+(comment
+  (split-vec [1 2 3 'on 4 5 6] 'on))
+
 (defn trim-plus [sym]
-  (let [idx (dec (count (name sym)))]
-    (symbol (subs (name sym) 0 idx))))
+  (symbol (transform [LAST] NONE (str sym))))
 
 (defn compile-expr [tape [expr & program]]
   (cond (nil? expr)
@@ -79,7 +82,7 @@
         (let [[_ & body] expr]
           ;; ive decided that loops don't have values, they are only for side effects
           `(do (loop []
-                
+                 
                  (assert (>= (count (deref ~tape)) 1) "loop must have test value to pop")
                  (let [v# (last (deref ~tape))]
                    (swap! ~tape pop)
