@@ -66,8 +66,14 @@
         
         (and (seq? expr) (= (first expr) 'fn))
         (let [[_ args & body] expr]
-          `(do (swap! ~tape conj (fn ~args ~(compile-expr tape body)))
-               ~(compile-expr tape program)))
+          (cond (vector? args)
+                `(do (swap! ~tape conj (fn ~args ~(compile-expr tape body)))
+                     ~(compile-expr tape program))
+                
+                (list? args) ;; multi arity fn
+                `(do (swap! ~tape conj (fn ~@(for [[args & body] (rest expr)]
+                                               `(~args ~(compile-expr tape body)))))
+                     ~(compile-expr tape program))))
         
         (and (seq? expr) (= (first expr) 'loop))
         (let [[_ & body] expr]

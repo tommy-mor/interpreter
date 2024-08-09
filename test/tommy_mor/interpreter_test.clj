@@ -64,7 +64,7 @@
          )) (f)) := 1
  "fib"
  (do (defstackfn f []
-       ;; for (int i = 0; i != 10; i--)
+       ;; for (int i = 0; i != 10; i++)
        "fibbonaci sequence" (invoke> println 1) <pop>
 
        0
@@ -75,26 +75,25 @@
        (loop
            !i+ <pop>
            
-         !i
-         (invoke> inc 1)
-         !i+ <pop>
+           !i
+           (invoke> inc 1)
+           !i+ <pop>
 
-         !b+ <pop>
-         !a+ <pop>
+           !b+ <pop>
+           !a+ <pop>
 
-         !b
-         !a !b (invoke> + 2) !c+
+           !b
+           !a !b (invoke> + 2) !c+
 
-         !c (invoke> println 1) <pop>
-         
-         !i
-         !i 10 (invoke> not= 2)
-         )) (f))
+           !c (invoke> println 1) <pop>
+           
+           !i
+           !i 10 (invoke> not= 2)
+           )) (f))
  )
 
 (tests
  "virtual method calls"
- (do (defstackfn f [] "arst" (invoke> count 1)) (f)) := 4
  (do (defstackfn f [] "arst" (invoke> .toUpperCase 1)) (f)) := "ARST"
  (do (defstackfn f [] (invoke> .get 2)) (f)) :throws clojure.lang.ExceptionInfo
  (do (defstackfn f [] 2 [1 2 3] (invoke> .get 2)) (f)) := 3)
@@ -102,7 +101,9 @@
 (tests
  "anonymous stack functions"
  (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
- (do (defstackfn f [] 5 (fn [!a] !a !a (invoke> + 2)) (invoke!> 2)) (f)) := 10
+
+ ;; invoke!> grabs the function off of the stack, as well as the arguments
+ (do (defstackfn f [] 5 (fn [!a] !a !a (invoke> + 2)) (invoke!> 2)) (f)) := 10 
 
  "with lexical closures"
  (do (defstackfn f [] 10 !b+ 5 !c+ !b (fn [!a] !a !c (invoke> + 2)) (invoke!> 2)) (f)) := (+ 5 10)
@@ -112,27 +113,61 @@
        10 !b+
        5 !c+
        (fn [!a]
-         !a
          (fn [!b] !a !b (invoke> * 2)))
        !f+
 
        !b !f (invoke!> 2) !f2+
-       !c !f2 (invoke!> 2)) (f))
+       !c !f2 (invoke!> 2)) (f)) := 50
  
  "multi arity functions"
  (do (defstackfn f []
        10 !b+
        5 !c+
-       (fn [!a !b] !a !b (invoke> + 2)) !f+
+       (fn
+         ([!a] !a 100 (invoke> + 2))
+         ([!a !b] !a !b (invoke> + 2))) !f+
 
        !b !c !f (invoke!> 3)) (f)) := 15
+ 
+ (do (defstackfn f []
+       (fn
+         ([!a] !a 100 (invoke> + 2))
+         ([!a !b] !a !b (invoke> + 2))) !f+
 
+       10 !f (invoke!> 2) !result+
+
+       10 !result !f (invoke!> 3)) (f)) := 120
+ 
  "varargs"
  (do (defstackfn f []
        5 !b+
        (fn [& !rest] !rest (invoke> count 1)) !f+
 
-       !b !b !b !b !b !f (invoke!> 5)) (f)) := 4)
+       !b !b !b !b !b !f (invoke!> 5)) (f)) := 4
+ 
+ (do (defstackfn f []
+       (fn
+         ([!a] !a 3 (invoke> + 2))
+         ([!a & !rest] !rest (invoke> count 1) !a (invoke> + 2))) !f+
+
+       10 !f (invoke!> 2) !result+
+
+       10 !result 1 2 3 4 5 6 7 8 !f (invoke!> 10)) (f)) := (+ 8 8)
+ 
+ (do (defstackfn f []
+       (fn [!x] !x (invoke> inc 1)) !f+
+
+       [1 2 3] !f (invoke> map 2)) (f)) := [2 3 4]
+ 
+ (do (defstackfn f []
+       
+       (fn [!x]
+         2 !x (invoke> = 2)
+         (if> 3 else> 4))
+       !f+
+
+       [1 2 3] !f (invoke> map 2)) (f)) := [4 3 4]
+ )
 
 (tests
  "constants"
