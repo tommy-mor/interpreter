@@ -25,6 +25,7 @@
        (loop
          !i+
          !i (invoke> println 1)
+         <pop>
          
          !i
          (invoke> dec 1)
@@ -32,7 +33,38 @@
 
          !i
          0
-         (invoke> not= 2))) (f)) := 4
+         (invoke> not= 2))) (f)) := 0
+ 
+ (do (defstackfn f []
+       4 !i+
+
+       10 !x+
+
+       !x
+       true
+       (loop
+           !x+ ;; read iter x from stack
+         
+         (invoke> println 0) <pop>
+
+         !x (invoke> dec 1) !x+ <pop>
+
+
+         !x ;; int i = 10
+         true
+         (loop
+             !i+ ;; int i = 10
+           !i (invoke> print 1) <pop>
+
+           !i (invoke> dec 1) !i+ <pop>
+
+           !i ;; for the !i+
+
+           0 !i (invoke> not= 2))
+
+         !x ;; for the !x+ at the top of the loop
+         1 !x (invoke> not= 2) ;; for the pop
+         )) (f)) := 1
  )
 
 (tests
