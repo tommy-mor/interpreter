@@ -19,21 +19,18 @@
 (tests
  "loops"
  (do (defstackfn f []
-       4 !i+
-       
-       true
+       ;; for (int i = 4; i != 0; i--)
+       4 ;; load 
+       true ;; will check/pop at beginning of every loop iteration top value on stack
        (loop
-         !i+
-         !i (invoke> println 1)
-         <pop>
+           !i+  ;; 
+         !i (invoke> println 1) <pop>
          
          !i
          (invoke> dec 1)
          !i+
 
-         !i
-         0
-         (invoke> not= 2))) (f)) := 0
+         !i 0 (invoke> not= 2))) (f)) := 0
  
  (do (defstackfn f []
        4 !i+
@@ -65,6 +62,34 @@
          !x ;; for the !x+ at the top of the loop
          1 !x (invoke> not= 2) ;; for the pop
          )) (f)) := 1
+ "fib"
+ (do (defstackfn f []
+       ;; for (int i = 0; i != 10; i--)
+       "fibbonaci sequence" (invoke> println 1) <pop>
+
+       0
+       1
+       
+       0
+       true 
+       (loop
+           !i+ <pop>
+           
+         !i
+         (invoke> inc 1)
+         !i+ <pop>
+
+         !b+ <pop>
+         !a+ <pop>
+
+         !b
+         !a !b (invoke> + 2) !c+
+
+         !c (invoke> println 1) <pop>
+         
+         !i
+         !i 10 (invoke> not= 2)
+         )) (f))
  )
 
 (tests
