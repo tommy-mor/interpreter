@@ -11,7 +11,7 @@
 
 
 (tests
- (split-vec [1 2 3 'split 5 6] 'split)
+ (split-vec [1 2 3 'split 5 6] 'split) := [[1 2 3] [5 6]]
  (split-vec [1 2 3 'split] 'split) := [[1 2 3] []]
  (split-vec ['split 4 5] 'split) := [[] [4 5]]
  (split-vec [4 5] 'split) := [[4 5] []])
@@ -98,15 +98,18 @@
  (do (defstackfn f [] (invoke> .get 2)) (f)) :throws clojure.lang.ExceptionInfo
  (do (defstackfn f [] 2 [1 2 3] (invoke> .get 2)) (f)) := 3)
 
-"TODO add missing tests"
-
 (tests
  "anonymous stack functions"
  ;; produces a function callable from clojure
  (do (defstackfn f [] 3 (fn [!a] !a !a (invoke> + 2))) ((f) 3)) := 6
 
  ;; invoke!> grabs the function off of the stack, as well as the arguments
- (do (defstackfn f [] 5 (fn [!a] !a !a (invoke> + 2)) (invoke!> 2)) (f)) := 10 
+ (do (defstackfn f [] 5 (fn [!a] !a !a (invoke> + 2)) (invoke!> 2)) (f)) := 10
+ 
+ ;; 1st argument = first item on stack, 2nd arg = 2nd item on stack (feels like its reversed)
+ (do (defstackfn f [] "world" "hello " (invoke> str 2)) (f)) := "hello world"
+
+ (do (defstackfn f [] "world" "hello " (fn [!a !b] !b !a (invoke> str 2)) (invoke!> 3)) (f)) := "hello world"
 
  "with lexical closures"
  (do (defstackfn f [] 10 !b+ 5 !c+ !b (fn [!a] !a !c (invoke> + 2)) (invoke!> 2)) (f)) := (+ 5 10)
@@ -121,6 +124,15 @@
 
        !b !f (invoke!> 2) !f2+
        !c !f2 (invoke!> 2)) (f)) := 50
+ 
+ (do (defstackfn f []
+       (fn [!a]
+         10 !c+
+         (fn [!b] !a !b !c (invoke> + 3)))
+       !f+
+
+       3 !f (invoke!> 2) !f2+
+       4 !f2 (invoke!> 2)) (f)) := 17
  
  "multi arity functions"
  (do (defstackfn f []
@@ -189,7 +201,8 @@
  "constants"
  
  
- (do (defstackfn f [] "ars") (f))
+ (do (defstackfn f []) (f)) := nil  ;; stack is empty. might make sense for this to throw
+ (do (defstackfn f [] "ars") (f)) := "ars"
  (do (defstackfn f [] true) (f)) := true
  
  (do (defstackfn f [] 3 4) (f)) := 4
@@ -231,12 +244,14 @@
  (do (defstackfn f [] <pop>) (f)) :throws java.lang.IllegalStateException
 
  "if"
+ (do (defstackfn f [] (if> 3 4)) (f)) :throws java.lang.IllegalStateException
  (do (defstackfn f [] true (if> 3 4)) (f)) := 4
  (do (defstackfn f [] true (if> 3 else> 4)) (f)) := 3
  (do (defstackfn f [] false (if> 3 else> 4)) (f)) := 4
  (do (defstackfn f [] true (if> 3 4 (invoke> * 2) else> 4)) (f)) := 12
  (do (defstackfn f [] 3 true (if> else> 4)) (f)) := 3
  (do (defstackfn f [] 3 false (if> else> 4) (invoke> * 2)) (f)) := 12
+ (do (defstackfn f [] false (if> else> true (if> 3 else> 4))) (f)) := 3
 
  (do (defstackfn f [!a !b !c]
        !a
